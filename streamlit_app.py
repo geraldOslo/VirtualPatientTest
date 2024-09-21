@@ -1,6 +1,28 @@
 import streamlit as st
 from openai import AzureOpenAI
 import os
+import base64
+from gtts import gTTS
+import tempfile
+
+# Function to create speech from text
+def text_to_speech(text):
+    tts = gTTS(text=text, lang='no')
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as fp:
+        tts.save(fp.name)
+        return fp.name
+
+# Function to create a playable audio in streamlit
+def autoplay_audio(file_path):
+    with open(file_path, "rb") as f:
+        data = f.read()
+        b64 = base64.b64encode(data).decode()
+        md = f"""
+            <audio autoplay="true">
+            <source src="data:audio/mp3;base64,{b64}" type="audio/mp3">
+            </audio>
+            """
+        st.markdown(md, unsafe_allow_html=True)
 
 # Create an AzureOpenAI client
 client = AzureOpenAI(
@@ -65,7 +87,7 @@ if prompt := st.chat_input("Hva vil du si til pasienten?"):
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    try:
+        try:
         response = client.chat.completions.create(
             model=st.secrets["OPENAI_DEPLOYMENT_NAME"],
             messages=st.session_state.messages,
@@ -85,6 +107,11 @@ if prompt := st.chat_input("Hva vil du si til pasienten?"):
                         full_response += chunk_message
                         response_text.markdown(full_response)
             st.session_state.messages.append({"role": "assistant", "content": full_response})
+            
+            # Generate speech from the response
+            speech_file = text_to_speech(full_response)
+            autoplay_audio(speech_file)
+            
     except Exception as e:
         st.error(f"An error occurred: {e}")
         st.error(f"Response object: {response}")
