@@ -80,8 +80,8 @@ if file_enabled:
                 })
 
 # Main app
-st.title("💬 Chatbot")
-st.write("Prototype av SimSamBot")
+st.title("💬 SimSamBot")
+st.write("Prototype for intern testing")
 
 # Initialize session state variables
 if "messages" not in st.session_state:
