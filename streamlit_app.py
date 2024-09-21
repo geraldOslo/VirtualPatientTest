@@ -110,12 +110,16 @@ if prompt := st.chat_input("Hva vil du si til pasienten?"):
                     if chunk_message:
                         full_response += chunk_message
                         response_text.markdown(full_response)
-            st.session_state.messages.append({"role": "assistant", "content": full_response})
             
-            # Generate speech from the response
-            speech_file = text_to_speech(full_response)
-            autoplay_audio(speech_file)
-            
+            if full_response:
+                st.session_state.messages.append({"role": "assistant", "content": full_response})
+                
+                # Generate speech from the response
+                speech_file = text_to_speech(full_response)
+                autoplay_audio(speech_file)
+            else:
+                st.error("Ingen respons mottatt fra AI. Vennligst prøv igjen.")
+                
     except Exception as e:
-        st.error(f"An error occurred: {e}")
-        st.error(f"Response object: {response}")
+        st.error(f"En feil oppstod: {str(e)}")
+        st.error(f"Responsobjekt: {response}")
