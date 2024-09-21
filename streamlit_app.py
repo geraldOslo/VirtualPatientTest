@@ -7,12 +7,12 @@ import tempfile
 import PyPDF2
 from io import BytesIO
 
-# Define the system content as a multi-line string
-SYSTEM_CONTENT = """
+# Define the initial system content
+DEFAULT_SYSTEM_CONTENT = """
 Du skal spille rollespill for å gi tannlegestudenter trening i å kommunisere med pasienter som har demensutfordringer. 
-Du skal spille rollen til den demente pasienten og svare som den. Beskrivelse av demens: Du glemmer lett og kan virke litt forvirret, ...
+Du skal være den demente pasienten og svare som den. Beskrivelse av demens: Du glemmer lett og kan virke litt forvirret, ...
 
-Bruk samtaleeksemplene i filene lastet opp som eksempler på hvordan en dement pasient kommuniserer med sin tannlege
+Bruk samtaleeksempler i filene lastet opp som eksempler på hvordan en dement pasient kommuniserer med sin tannlege
 """
 
 # Create an AzureOpenAI client
@@ -46,6 +46,16 @@ st.sidebar.title("Innstillinger")
 speech_enabled = st.sidebar.toggle("Aktiver tale", value=True)
 file_enabled = st.sidebar.toggle("Aktiver filopplasting", value=False)
 
+# Editable system prompt in sidebar
+if "system_content" not in st.session_state:
+    st.session_state.system_content = DEFAULT_SYSTEM_CONTENT
+
+st.session_state.system_content = st.sidebar.text_area(
+    "System Prompt (AI instructions)",
+    st.session_state.system_content,
+    height=300
+)
+
 # File uploader in sidebar if enabled
 if file_enabled:
     uploaded_file = st.sidebar.file_uploader("Last opp fil med samtaleeksempler", type=["txt", "pdf"])
@@ -78,9 +88,13 @@ if "messages" not in st.session_state:
     st.session_state.messages = [
         {
             "role": "system",
-            "content": SYSTEM_CONTENT
+            "content": st.session_state.system_content
         }
     ]
+
+# Update system message if it has changed
+if st.session_state.messages[0]["content"] != st.session_state.system_content:
+    st.session_state.messages[0]["content"] = st.session_state.system_content
 
 # Display the existing chat messages
 for message in st.session_state.messages:
