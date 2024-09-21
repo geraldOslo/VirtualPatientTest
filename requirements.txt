@@ -2,3 +2,4 @@ streamlit
 openai
 pyttsx3
 gtts
+PyPDF2
