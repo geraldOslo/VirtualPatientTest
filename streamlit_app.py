@@ -5,6 +5,13 @@ import base64
 from gtts import gTTS
 import tempfile
 
+# Create an AzureOpenAI client
+client = AzureOpenAI(
+    azure_endpoint=st.secrets["OPENAI_API_BASE"],
+    api_version=st.secrets["OPENAI_API_VERSION"],
+    api_key=st.secrets["OPENAI_API_KEY"],
+)
+
 # Function to create speech from text
 def text_to_speech(text):
     tts = gTTS(text=text, lang='no')
@@ -23,13 +30,6 @@ def autoplay_audio(file_path):
             </audio>
             """
         st.markdown(md, unsafe_allow_html=True)
-
-# Create an AzureOpenAI client
-client = AzureOpenAI(
-    azure_endpoint=st.secrets["OPENAI_API_BASE"],
-    api_version=st.secrets["OPENAI_API_VERSION"],
-    api_key=st.secrets["OPENAI_API_KEY"],
-)
 
 # Show title and description.
 st.title("💬 Chatbot")
@@ -88,30 +88,30 @@ if prompt := st.chat_input("Hva vil du si til pasienten?"):
         st.markdown(prompt)
 
     try:
-    response = client.chat.completions.create(
-        model=st.secrets["OPENAI_DEPLOYMENT_NAME"],
-        messages=st.session_state.messages,
-        temperature=1,
-        top_p=1,
-        max_tokens=500,
-        stream=True,
-    )
+        response = client.chat.completions.create(
+            model=st.secrets["OPENAI_DEPLOYMENT_NAME"],
+            messages=st.session_state.messages,
+            temperature=1,
+            top_p=1,
+            max_tokens=500,
+            stream=True,
+        )
 
-    with st.chat_message("assistant"):
-        response_text = st.empty()
-        full_response = ""
-        for chunk in response:
-            if chunk.choices and len(chunk.choices) > 0:
-                chunk_message = chunk.choices[0].delta.content
-                if chunk_message:
-                    full_response += chunk_message
-                    response_text.markdown(full_response)
-        st.session_state.messages.append({"role": "assistant", "content": full_response})
-        
-        # Generate speech from the response
-        speech_file = text_to_speech(full_response)
-        autoplay_audio(speech_file)
-        
-except Exception as e:
-    st.error(f"An error occurred: {e}")
-    st.error(f"Response object: {response}")
+        with st.chat_message("assistant"):
+            response_text = st.empty()
+            full_response = ""
+            for chunk in response:
+                if chunk.choices and len(chunk.choices) > 0:
+                    chunk_message = chunk.choices[0].delta.content
+                    if chunk_message:
+                        full_response += chunk_message
+                        response_text.markdown(full_response)
+            st.session_state.messages.append({"role": "assistant", "content": full_response})
+            
+            # Generate speech from the response
+            speech_file = text_to_speech(full_response)
+            autoplay_audio(speech_file)
+            
+    except Exception as e:
+        st.error(f"An error occurred: {e}")
+        st.error(f"Response object: {response}")
