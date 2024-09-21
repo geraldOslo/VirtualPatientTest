@@ -4,6 +4,8 @@ import os
 import base64
 from gtts import gTTS
 import tempfile
+import PyPDF2
+from io import BytesIO
 
 # Define the system content as a multi-line string
 SYSTEM_CONTENT = """
@@ -39,7 +41,35 @@ def autoplay_audio(file_path):
             """
         st.markdown(md, unsafe_allow_html=True)
 
-# Show title and description.
+# Sidebar settings
+st.sidebar.title("Innstillinger")
+speech_enabled = st.sidebar.toggle("Aktiver tale", value=True)
+file_enabled = st.sidebar.toggle("Aktiver filopplasting", value=False)
+
+# File uploader in sidebar if enabled
+if file_enabled:
+    uploaded_file = st.sidebar.file_uploader("Last opp fil med samtaleeksempler", type=["txt", "pdf"])
+    if uploaded_file is not None:
+        if uploaded_file.type == "text/plain":
+            file_contents = uploaded_file.read().decode("utf-8")
+        elif uploaded_file.type == "application/pdf":
+            reader = PyPDF2.PdfReader(BytesIO(uploaded_file.getvalue()))
+            file_contents = ""
+            for page in reader.pages:
+                file_contents += page.extract_text()
+        else:
+            st.sidebar.error("Ikke støttet filtype.")
+            file_contents = ""
+
+        if file_contents:
+            st.sidebar.text_area("Innhold i filen:", file_contents, height=200)
+            if "messages" in st.session_state:
+                st.session_state.messages.append({
+                    "role": "system",
+                    "content": f"Samtaleeksempler:\n{file_contents}"
+                })
+
+# Main app
 st.title("💬 Chatbot")
 st.write("Prototype av SimSamBot")
 
@@ -51,32 +81,6 @@ if "messages" not in st.session_state:
             "content": SYSTEM_CONTENT
         }
     ]
-    st.session_state.file_contents = ""
-
-# File uploader for conversation examples
-uploaded_file = st.file_uploader("Last opp fil med samtaleeksempler", type=["txt", "pdf"])
-
-if uploaded_file is not None and not st.session_state.file_contents:
-    if uploaded_file.type == "text/plain":
-        file_contents = uploaded_file.read().decode("utf-8")
-    elif uploaded_file.type == "application/pdf":
-        import PyPDF2
-        from io import BytesIO
-        reader = PyPDF2.PdfReader(BytesIO(uploaded_file.getvalue()))
-        file_contents = ""
-        for page in reader.pages:
-            file_contents += page.extract_text()
-    else:
-        st.error("Unsupported file type.")
-        file_contents = ""
-
-    st.text_area("Innhold i filen:", file_contents, height=200)
-
-    st.session_state.messages.append({
-        "role": "system",
-        "content": f"Samtaleeksempler:\n{file_contents}"
-    })
-    st.session_state.file_contents = file_contents
 
 # Display the existing chat messages
 for message in st.session_state.messages:
@@ -114,9 +118,12 @@ if prompt := st.chat_input("Hva vil du si til pasienten?"):
             if full_response:
                 st.session_state.messages.append({"role": "assistant", "content": full_response})
                 
-                # Generate speech from the response
-                speech_file = text_to_speech(full_response)
-                autoplay_audio(speech_file)
+                if speech_enabled:
+                    # Generate speech from the response
+                    speech_file = text_to_speech(full_response)
+                    autoplay_audio(speech_file)
+                    # Clean up the temporary audio file
+                    os.remove(speech_file)
             else:
                 st.error("Ingen respons mottatt fra AI. Vennligst prøv igjen.")
                 
