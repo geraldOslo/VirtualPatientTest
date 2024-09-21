@@ -87,31 +87,31 @@ if prompt := st.chat_input("Hva vil du si til pasienten?"):
     with st.chat_message("user"):
         st.markdown(prompt)
 
-        try:
-        response = client.chat.completions.create(
-            model=st.secrets["OPENAI_DEPLOYMENT_NAME"],
-            messages=st.session_state.messages,
-            temperature=1,
-            top_p=1,
-            max_tokens=500,
-            stream=True,
-        )
+    try:
+    response = client.chat.completions.create(
+        model=st.secrets["OPENAI_DEPLOYMENT_NAME"],
+        messages=st.session_state.messages,
+        temperature=1,
+        top_p=1,
+        max_tokens=500,
+        stream=True,
+    )
 
-        with st.chat_message("assistant"):
-            response_text = st.empty()
-            full_response = ""
-            for chunk in response:
-                if chunk.choices and len(chunk.choices) > 0:
-                    chunk_message = chunk.choices[0].delta.content
-                    if chunk_message:
-                        full_response += chunk_message
-                        response_text.markdown(full_response)
-            st.session_state.messages.append({"role": "assistant", "content": full_response})
-            
-            # Generate speech from the response
-            speech_file = text_to_speech(full_response)
-            autoplay_audio(speech_file)
-            
-    except Exception as e:
-        st.error(f"An error occurred: {e}")
-        st.error(f"Response object: {response}")
+    with st.chat_message("assistant"):
+        response_text = st.empty()
+        full_response = ""
+        for chunk in response:
+            if chunk.choices and len(chunk.choices) > 0:
+                chunk_message = chunk.choices[0].delta.content
+                if chunk_message:
+                    full_response += chunk_message
+                    response_text.markdown(full_response)
+        st.session_state.messages.append({"role": "assistant", "content": full_response})
+        
+        # Generate speech from the response
+        speech_file = text_to_speech(full_response)
+        autoplay_audio(speech_file)
+        
+except Exception as e:
+    st.error(f"An error occurred: {e}")
+    st.error(f"Response object: {response}")
