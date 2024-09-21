@@ -5,6 +5,14 @@ import base64
 from gtts import gTTS
 import tempfile
 
+# Define the system content as a multi-line string
+SYSTEM_CONTENT = """
+Du skal spille rollespill for å gi tannlegestudenter trening i å kommunisere med pasienter som har demensutfordringer. 
+Du skal spille rollen til den demente pasienten og svare som den. Beskrivelse av demens: Du glemmer lett og kan virke litt forvirret, ...
+
+Bruk samtaleeksemplene i filene lastet opp som eksempler på hvordan en dement pasient kommuniserer med sin tannlege
+"""
+
 # Create an AzureOpenAI client
 client = AzureOpenAI(
     azure_endpoint=st.secrets["OPENAI_API_BASE"],
@@ -40,11 +48,7 @@ if "messages" not in st.session_state:
     st.session_state.messages = [
         {
             "role": "system",
-            "content": (
-                "Du skal spille rollespill for å gi tannlegestudenter trening i å kommunisere med pasienter som har demensutfordringer. "
-                "Du skal være den demente pasienten og svare som den. Beskrivelse av demens: Du glemmer lett og kan virke litt forvirret, ...\n\n"
-                "Bruk samtaleeksemplene i filene lastet opp som eksempler på hvordan en dement pasient kommuniserer med sin tannlege"
-            )
+            "content": SYSTEM_CONTENT
         }
     ]
     st.session_state.file_contents = ""
