@@ -3,7 +3,6 @@ from openai import AzureOpenAI
 import os
 import base64
 from gtts import gTTS
-from gtts.lang import tts_langs
 import tempfile
 import PyPDF2
 from io import BytesIO
@@ -30,17 +29,11 @@ client = AzureOpenAI(
 )
 
 # Function to create speech from text
-def text_to_speech(text, voice_option):
-    lang, tld = voice_options[voice_option]
-    
-    try:
-        tts = gTTS(text=text, lang=lang, tld=tld)
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as fp:
-            tts.save(fp.name)
-            return fp.name
-    except Exception as e:
-        st.error(f"Error in text-to-speech: {str(e)}")
-        return None
+def text_to_speech(text):
+    tts = gTTS(text=text, lang='no')
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as fp:
+        tts.save(fp.name)
+        return fp.name
 
 # Function to create a playable audio in streamlit
 def autoplay_audio(file_path):
@@ -58,13 +51,6 @@ def autoplay_audio(file_path):
 st.sidebar.title("Innstillinger")
 speech_enabled = st.sidebar.toggle("Aktiver tale", value=True)
 file_enabled = st.sidebar.toggle("Aktiver filopplasting", value=False)
-
-st.sidebar.title("Voice Settings")
-voice_options = {
-    "Norwegian (Female)": ("no", "no"),
-    "Norwegian (Male)": ("no", "com")
-}
-selected_voice = st.sidebar.selectbox("Select Voice", list(voice_options.keys()), index=0)
 
 # Editable system prompt in sidebar
 if "system_content" not in st.session_state:
@@ -153,12 +139,11 @@ if prompt := st.chat_input("Hva vil du si til pasienten?"):
                 st.session_state.messages.append({"role": "assistant", "content": full_response})
                 
                 if speech_enabled:
-                    speech_file = text_to_speech(full_response, selected_voice)
-                    if speech_file:
-                        autoplay_audio(speech_file)
-                        os.remove(speech_file)
-                    else:
-                        st.error("Kunne ikke generere tale.")
+                    # Generate speech from the response
+                    speech_file = text_to_speech(full_response)
+                    autoplay_audio(speech_file)
+                    # Clean up the temporary audio file
+                    os.remove(speech_file)
             else:
                 st.error("Ingen respons mottatt fra AI. Vennligst prøv igjen.")
                 
