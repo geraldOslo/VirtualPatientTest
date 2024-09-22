@@ -30,10 +30,8 @@ client = AzureOpenAI(
 )
 
 # Function to create speech from text
-def text_to_speech(text, lang='no'):
-    tld = 'no'  # Top-level domain for Norway
-    if lang == 'no-nb':
-        tld = 'com'  # This might give a slightly different accent
+def text_to_speech(text, voice_option):
+    lang, tld = voice_options[voice_option]
     
     tts = gTTS(text=text, lang=lang, tld=tld)
     with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as fp:
@@ -58,9 +56,11 @@ speech_enabled = st.sidebar.toggle("Aktiver tale", value=True)
 file_enabled = st.sidebar.toggle("Aktiver filopplasting", value=False)
 
 st.sidebar.title("Voice Settings")
-available_langs = tts_langs()
-norwegian_voices = [lang for lang in available_langs if lang.startswith('no')]
-selected_voice = st.sidebar.selectbox("Select Norwegian Voice", norwegian_voices, index=0)
+voice_options = {
+    "Norwegian (Female)": ("no", "no"),
+    "Norwegian (Male)": ("no-nb", "com")
+}
+selected_voice = st.sidebar.selectbox("Select Voice", list(voice_options.keys()), index=0)
 
 # Editable system prompt in sidebar
 if "system_content" not in st.session_state:
@@ -149,7 +149,7 @@ if prompt := st.chat_input("Hva vil du si til pasienten?"):
                 st.session_state.messages.append({"role": "assistant", "content": full_response})
                 
                 if speech_enabled:
-                    speech_file = text_to_speech(full_response, lang=selected_voice)
+                    speech_file = text_to_speech(full_response, selected_voice)
                     autoplay_audio(speech_file)
                     os.remove(speech_file)
             else:
