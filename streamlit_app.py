@@ -33,10 +33,14 @@ client = AzureOpenAI(
 def text_to_speech(text, voice_option):
     lang, tld = voice_options[voice_option]
     
-    tts = gTTS(text=text, lang=lang, tld=tld)
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as fp:
-        tts.save(fp.name)
-        return fp.name
+    try:
+        tts = gTTS(text=text, lang=lang, tld=tld)
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as fp:
+            tts.save(fp.name)
+            return fp.name
+    except Exception as e:
+        st.error(f"Error in text-to-speech: {str(e)}")
+        return None
 
 # Function to create a playable audio in streamlit
 def autoplay_audio(file_path):
@@ -58,7 +62,7 @@ file_enabled = st.sidebar.toggle("Aktiver filopplasting", value=False)
 st.sidebar.title("Voice Settings")
 voice_options = {
     "Norwegian (Female)": ("no", "no"),
-    "Norwegian (Male)": ("no-nb", "com")
+    "Norwegian (Male)": ("no", "com")
 }
 selected_voice = st.sidebar.selectbox("Select Voice", list(voice_options.keys()), index=0)
 
@@ -150,8 +154,11 @@ if prompt := st.chat_input("Hva vil du si til pasienten?"):
                 
                 if speech_enabled:
                     speech_file = text_to_speech(full_response, selected_voice)
-                    autoplay_audio(speech_file)
-                    os.remove(speech_file)
+                    if speech_file:
+                        autoplay_audio(speech_file)
+                        os.remove(speech_file)
+                    else:
+                        st.error("Kunne ikke generere tale.")
             else:
                 st.error("Ingen respons mottatt fra AI. Vennligst prøv igjen.")
                 
