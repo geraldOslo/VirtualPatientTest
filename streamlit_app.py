@@ -3,6 +3,7 @@ from openai import AzureOpenAI
 import os
 import base64
 from gtts import gTTS
+from gtts.lang import tts_langs
 import tempfile
 import PyPDF2
 from io import BytesIO
@@ -29,8 +30,12 @@ client = AzureOpenAI(
 )
 
 # Function to create speech from text
-def text_to_speech(text):
-    tts = gTTS(text=text, lang='no')
+def text_to_speech(text, lang='no'):
+    tld = 'no'  # Top-level domain for Norway
+    if lang == 'no-nb':
+        tld = 'com'  # This might give a slightly different accent
+    
+    tts = gTTS(text=text, lang=lang, tld=tld)
     with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as fp:
         tts.save(fp.name)
         return fp.name
@@ -51,6 +56,11 @@ def autoplay_audio(file_path):
 st.sidebar.title("Innstillinger")
 speech_enabled = st.sidebar.toggle("Aktiver tale", value=True)
 file_enabled = st.sidebar.toggle("Aktiver filopplasting", value=False)
+
+st.sidebar.title("Voice Settings")
+available_langs = tts_langs()
+norwegian_voices = [lang for lang in available_langs if lang.startswith('no')]
+selected_voice = st.sidebar.selectbox("Select Norwegian Voice", norwegian_voices, index=0)
 
 # Editable system prompt in sidebar
 if "system_content" not in st.session_state:
@@ -139,10 +149,8 @@ if prompt := st.chat_input("Hva vil du si til pasienten?"):
                 st.session_state.messages.append({"role": "assistant", "content": full_response})
                 
                 if speech_enabled:
-                    # Generate speech from the response
-                    speech_file = text_to_speech(full_response)
+                    speech_file = text_to_speech(full_response, lang=selected_voice)
                     autoplay_audio(speech_file)
-                    # Clean up the temporary audio file
                     os.remove(speech_file)
             else:
                 st.error("Ingen respons mottatt fra AI. Vennligst prøv igjen.")
