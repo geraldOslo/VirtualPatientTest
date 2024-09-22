@@ -66,11 +66,11 @@ if "system_content" not in st.session_state:
 
 new_system_content = st.sidebar.text_area(
     "System Prompt (AI instructions)",
-    st.session_state.system_content,
-    height=300
+    value=st.session_state.system_content,
+    height=300,
+    key="system_prompt"
 )
 
-# Button to apply changes
 if st.sidebar.button("Oppdater AI-instruksjoner"):
     st.session_state.system_content = new_system_content
     st.session_state.messages = [
