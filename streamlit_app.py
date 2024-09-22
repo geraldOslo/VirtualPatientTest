@@ -70,8 +70,8 @@ new_system_content = st.sidebar.text_area(
     height=300
 )
 
-# Check if system content has changed
-if new_system_content != st.session_state.system_content:
+# Button to apply changes
+if st.sidebar.button("Oppdater AI-instruksjoner"):
     st.session_state.system_content = new_system_content
     st.session_state.messages = [
         {
@@ -79,7 +79,6 @@ if new_system_content != st.session_state.system_content:
             "content": st.session_state.system_content
         }
     ]
-    st.experimental_rerun()
 
 # File uploader in sidebar if enabled
 if file_enabled:
