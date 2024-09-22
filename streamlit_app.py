@@ -6,6 +6,7 @@ from gtts import gTTS
 import tempfile
 import PyPDF2
 from io import BytesIO
+import json
 
 # Define the initial system content
 DEFAULT_SYSTEM_CONTENT = """
@@ -47,6 +48,13 @@ def autoplay_audio(file_path):
             """
         st.markdown(md, unsafe_allow_html=True)
 
+# Function to download chat as a file
+def download_chat():
+    chat_content = json.dumps(st.session_state.messages, indent=2, ensure_ascii=False)
+    b64 = base64.b64encode(chat_content.encode()).decode()
+    href = f'<a href="data:file/json;base64,{b64}" download="chat_history.json">Last ned samtalehistorikk</a>'
+    return href
+
 # Sidebar settings
 st.sidebar.title("Innstillinger")
 speech_enabled = st.sidebar.toggle("Aktiver tale", value=True)
@@ -56,11 +64,22 @@ file_enabled = st.sidebar.toggle("Aktiver filopplasting", value=False)
 if "system_content" not in st.session_state:
     st.session_state.system_content = DEFAULT_SYSTEM_CONTENT
 
-st.session_state.system_content = st.sidebar.text_area(
+new_system_content = st.sidebar.text_area(
     "System Prompt (AI instructions)",
     st.session_state.system_content,
     height=300
 )
+
+# Check if system content has changed
+if new_system_content != st.session_state.system_content:
+    st.session_state.system_content = new_system_content
+    st.session_state.messages = [
+        {
+            "role": "system",
+            "content": st.session_state.system_content
+        }
+    ]
+    st.experimental_rerun()
 
 # File uploader in sidebar if enabled
 if file_enabled:
@@ -97,10 +116,6 @@ if "messages" not in st.session_state:
             "content": st.session_state.system_content
         }
     ]
-
-# Update system message if it has changed
-if st.session_state.messages[0]["content"] != st.session_state.system_content:
-    st.session_state.messages[0]["content"] = st.session_state.system_content
 
 # Display the existing chat messages
 for message in st.session_state.messages:
@@ -150,3 +165,6 @@ if prompt := st.chat_input("Hva vil du si til pasienten?"):
     except Exception as e:
         st.error(f"En feil oppstod: {str(e)}")
         st.error(f"Responsobjekt: {response}")
+
+# Add download button to the sidebar
+st.sidebar.markdown(download_chat(), unsafe_allow_html=True)
