@@ -65,7 +65,7 @@ if "system_content" not in st.session_state:
     st.session_state.system_content = DEFAULT_SYSTEM_CONTENT
 
 new_system_content = st.sidebar.text_area(
-    "System Prompt (AI instructions)",
+    "Systemprompt (Instruksjon til boten)",
     value=st.session_state.system_content,
     height=300,
     key="system_prompt"
