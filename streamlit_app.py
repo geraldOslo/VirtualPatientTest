@@ -7,20 +7,25 @@ import tempfile
 import PyPDF2
 from io import BytesIO
 import json
+import pandas as pd
 
-# Define the initial system content
-DEFAULT_SYSTEM_CONTENT = """
-Du skal spille rollespill for å gi tannlegestudenter trening i å kommunisere med pasienter som har demensutfordringer. 
-Du skal spille rollen til den demente pasienten og svare som den. Beskrivelse av demens: Du glemmer lett og kan virke litt forvirret, ...
-Vanlige symptomer på demens er:
-- Tap av hukommelse
-- Sviktende handlingsevne
-- Sviktende språkfunksjon
-- Endringer i personligheten
-- Endring i atferd
+csv_path = 'https://github.com/geraldOslo/VirtualPatientTest/tree/d4bc0e2da1548971f4d4937d887f09c3af2a0856/data/skybert.txt'
+# Les CSV-filen og forbered dataene
+df = pd.read_csv(csv_path, sep=';', encoding='utf-8')
 
-Bruk samtaleeksempler i filene lastet opp som eksempler på hvordan en dement pasient kommuniserer med sin tannlege
-"""
+def prepare_chat_input(row):
+    return {
+        'name': row['name'],
+        'age': row['age'],
+        'gender': row['gender'],
+        'diagnose': row['diagnose'],
+        'system_content': row['system_content'],
+        'setting': row['setting'],
+        'person_description': row['person_description'],
+        'conversation_examples': '\n\n'.join([row[f'file_{i}'] for i in range(1, int(row['files'])+1) if pd.notna(row[f'file_{i}'])])
+    }
+
+chat_inputs = [prepare_chat_input(row) for row in df.to_dict('records')]
 
 # Create an AzureOpenAI client
 client = AzureOpenAI(
@@ -60,9 +65,41 @@ st.sidebar.title("Innstillinger")
 speech_enabled = st.sidebar.toggle("Aktiver tale", value=True)
 file_enabled = st.sidebar.toggle("Aktiver filopplasting", value=False)
 
+# Selectbox for scenario selection
+selected_scenario = st.sidebar.selectbox("Velg scenario", range(len(chat_inputs)), format_func=lambda i: f"Scenario {i+1}: {chat_inputs[i]['name']}")
+
+# Function to update system content
+def update_system_content():
+    scenario = chat_inputs[selected_scenario]
+    st.session_state.system_content = f"""
+    Du skal spille rollespill for å gi studenter trening i å kommunisere med pasienter.
+    Du heter {scenario['name']} og er {scenario['age']} år gammel. Ditt kjønn er {scenario['gender']}.
+    
+    Hovedinstruksjon: {scenario['system_content']}
+    
+    Den konkrete setting/situasjon/oppgave er: {scenario['setting']}
+    
+    Nærmere beskrivelse av person og/eller diagnose: {scenario['diagnose']}
+    
+    Eksempler på kommunikasjon:
+    {scenario['conversation_examples']}
+    
+    Simuler liknende type samtaler basert på disse eksemplene.
+    """
+    st.session_state.messages = [
+        {
+            "role": "system",
+            "content": st.session_state.system_content
+        }
+    ]
+
+# Update system content when a new scenario is selected
+if st.sidebar.button("Last scenario"):
+    update_system_content()
+
 # Editable system prompt in sidebar
 if "system_content" not in st.session_state:
-    st.session_state.system_content = DEFAULT_SYSTEM_CONTENT
+    update_system_content()
 
 new_system_content = st.sidebar.text_area(
     "Systemprompt (Instruksjon til boten)",
