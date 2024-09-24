@@ -5,7 +5,7 @@ from io import StringIO
 import openai
 
 # URL to raw CSV content
-csv_url = 'https://raw.githubusercontent.com/geraldOslo/VirtualPatientTest/main/data/skybert.csv'
+csv_url = 'https://raw.githubusercontent.com/geraldOslo/VirtualPatientTest/main/data/anders.csv'
 
 st.set_page_config(page_title="Virtual Patient Simulator", page_icon="🦷", layout="wide")
 
