@@ -12,7 +12,7 @@ from io import StringIO
 import requests
 
 # URL til raw CSV-innhold
-csv_url = 'https://raw.githubusercontent.com/geraldOslo/VirtualPatientTest/refs/heads/main/data/skybert.csv'
+csv_url = 'https://raw.githubusercontent.com/geraldOslo/VirtualPatientTest/refs/heads/main/data/anders.csv'
 
 # Les CSV-filen og forbered dataene
 try:
