@@ -8,13 +8,24 @@ import PyPDF2
 from io import BytesIO
 import json
 import pandas as pd
+from io import StringIO
 
-csv_path = 'https://github.com/geraldOslo/VirtualPatientTest/tree/d4bc0e2da1548971f4d4937d887f09c3af2a0856/data/skybert.txt'
+# URL til raw CSV-innhold
+csv_url = 'https://raw.githubusercontent.com/geraldOslo/VirtualPatientTest/d4bc0e2da1548971f4d4937d887f09c3af2a0856/data/skybert.csv'
 
 # Les CSV-filen og forbered dataene
 try:
-    df = pd.read_csv(csv_path, sep=';', encoding='utf-8', error_bad_lines=False, warn_bad_lines=True)
+    response = requests.get(csv_url)
+    response.raise_for_status()  # Vil reise en exception for HTTP-feil
+    csv_content = StringIO(response.text)
+    df = pd.read_csv(csv_content, sep=';', encoding='utf-8')
     st.sidebar.success("CSV-fil lest inn vellykket")
+except requests.RequestException as e:
+    st.sidebar.error(f"Feil ved nedlasting av CSV-fil: {str(e)}")
+    st.stop()
+except pd.errors.EmptyDataError:
+    st.sidebar.error("CSV-filen er tom")
+    st.stop()
 except Exception as e:
     st.sidebar.error(f"Feil ved innlesing av CSV-fil: {str(e)}")
     st.stop()
@@ -38,16 +49,15 @@ def prepare_chat_input(row):
     except KeyError as e:
         st.sidebar.error(f"Manglende kolonne i CSV: {str(e)}")
         return None
+    except ValueError as e:
+        st.sidebar.error(f"Feil ved konvertering av data: {str(e)}")
+        return None
 
 chat_inputs = [input for input in (prepare_chat_input(row) for row in df.to_dict('records')) if input is not None]
 
 if not chat_inputs:
     st.sidebar.error("Ingen gyldige scenarioer funnet i CSV-filen")
     st.stop()
-
-
-
-
 
 def prepare_chat_input(row):
     return {
