@@ -32,7 +32,7 @@ api_key = st.sidebar.text_input("Skriv inn API-nøkkel", type="password")
 client = AzureOpenAI(
     azure_endpoint=st.secrets["OPENAI_API_BASE"],
     api_version=st.secrets["OPENAI_API_VERSION"],
-    api_key=api_key if api_key else st.secrets["OPENAI_API_KEY"],
+    api_key=api_key,
 )
 
 def text_to_speech(text):
