@@ -9,7 +9,7 @@ from io import BytesIO
 import json
 import pandas as pd
 
-csv_url = 'https://raw.githubusercontent.com/geraldOslo/VirtualPatientTest/main/data/anders.csv'
+csv_path = 'https://raw.githubusercontent.com/geraldOslo/VirtualPatientTest/main/data/anders.csv'
 df = pd.read_csv(csv_path, sep=';', encoding='utf-8')
 
 def prepare_chat_input(row):
