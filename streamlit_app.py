@@ -5,7 +5,7 @@ from io import StringIO
 import openai
 
 # URL to raw CSV content
-csv_url = 'https://raw.githubusercontent.com/geraldOslo/VirtualPatientTest/main/data/anders.csv'
+csv_url = 'https://raw.githubusercontent.com/geraldOslo/VirtualPatientTest/main/data/skybert.csv'
 
 st.set_page_config(page_title="Virtual Patient Simulator", page_icon="🦷", layout="wide")
 
@@ -63,8 +63,9 @@ if "messages" not in st.session_state:
 
 # Display chat messages
 for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+    if message["role"] != "system":
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
 
 # Chat input
 if prompt := st.chat_input("What do you want to ask the patient?"):
@@ -83,7 +84,7 @@ if prompt := st.chat_input("What do you want to ask the patient?"):
             messages=[
                 {"role": "system", "content": selected_input['system_content']},
                 {"role": "system", "content": selected_input['conversation_examples']},
-                *[{"role": m["role"], "content": m["content"]} for m in st.session_state.messages]
+                *[{"role": m["role"], "content": m["content"]} for m in st.session_state.messages if m["role"] != "system"]
             ],
             stream=True,
         ):
