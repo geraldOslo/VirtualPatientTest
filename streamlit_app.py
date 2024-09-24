@@ -10,8 +10,44 @@ import json
 import pandas as pd
 
 csv_path = 'https://github.com/geraldOslo/VirtualPatientTest/tree/d4bc0e2da1548971f4d4937d887f09c3af2a0856/data/skybert.txt'
+
 # Les CSV-filen og forbered dataene
-df = pd.read_csv(csv_path, sep=';', encoding='utf-8')
+try:
+    df = pd.read_csv(csv_path, sep=';', encoding='utf-8', error_bad_lines=False, warn_bad_lines=True)
+    st.sidebar.success("CSV-fil lest inn vellykket")
+except Exception as e:
+    st.sidebar.error(f"Feil ved innlesing av CSV-fil: {str(e)}")
+    st.stop()
+
+# Vis informasjon om dataene
+st.sidebar.write(f"Antall rader i CSV: {len(df)}")
+st.sidebar.write(f"Kolonner i CSV: {', '.join(df.columns)}")
+
+def prepare_chat_input(row):
+    try:
+        return {
+            'name': row['name'],
+            'age': row['age'],
+            'gender': row['gender'],
+            'diagnose': row['diagnose'],
+            'system_content': row['system_content'],
+            'setting': row['setting'],
+            'person_description': row['person_description'],
+            'conversation_examples': '\n\n'.join([row[f'file_{i}'] for i in range(1, int(row['files'])+1) if pd.notna(row[f'file_{i}'])])
+        }
+    except KeyError as e:
+        st.sidebar.error(f"Manglende kolonne i CSV: {str(e)}")
+        return None
+
+chat_inputs = [input for input in (prepare_chat_input(row) for row in df.to_dict('records')) if input is not None]
+
+if not chat_inputs:
+    st.sidebar.error("Ingen gyldige scenarioer funnet i CSV-filen")
+    st.stop()
+
+
+
+
 
 def prepare_chat_input(row):
     return {
