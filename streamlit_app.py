@@ -60,7 +60,6 @@ def download_chat():
 
 st.sidebar.title("Innstillinger")
 speech_enabled = st.sidebar.toggle("Aktiver tale", value=True)
-file_enabled = st.sidebar.toggle("Aktiver filopplasting", value=False)
 
 selected_scenario = st.sidebar.selectbox("Velg scenario", range(len(chat_inputs)), format_func=lambda i: f"Scenario {i+1}: {chat_inputs[i]['name']}")
 
@@ -109,28 +108,6 @@ if st.sidebar.button("Oppdater AI-instruksjoner"):
             "content": st.session_state.system_content
         }
     ]
-
-if file_enabled:
-    uploaded_file = st.sidebar.file_uploader("Last opp fil med samtaleeksempler", type=["txt", "pdf"])
-    if uploaded_file is not None:
-        if uploaded_file.type == "text/plain":
-            file_contents = uploaded_file.read().decode("utf-8")
-        elif uploaded_file.type == "application/pdf":
-            reader = PyPDF2.PdfReader(BytesIO(uploaded_file.getvalue()))
-            file_contents = ""
-            for page in reader.pages:
-                file_contents += page.extract_text()
-        else:
-            st.sidebar.error("Ikke støttet filtype.")
-            file_contents = ""
-
-        if file_contents:
-            st.sidebar.text_area("Innhold i filen:", file_contents, height=200)
-            if "messages" in st.session_state:
-                st.session_state.messages.append({
-                    "role": "system",
-                    "content": f"Samtaleeksempler:\n{file_contents}"
-                })
 
 st.title("💬 SimSamBot")
 st.write("Prototype for intern testing")
